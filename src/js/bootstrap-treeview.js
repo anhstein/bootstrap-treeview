@@ -319,11 +319,10 @@
 
 	Tree.prototype.clickHandler = function (event) {
 
-		if (!this.options.enableLinks) event.preventDefault();
-
 		var target = $(event.target);
 		var node = this.findNode(target);
-		if (!node || node.state.disabled) return;
+        if (!node || node.state.disabled) return;
+        var preventDefault = !this.options.enableLinks;
 		
 		var classList = target.attr('class') ? target.attr('class').split(' ') : [];
 		if ((classList.indexOf('expand-icon') !== -1)) {
@@ -332,9 +331,11 @@
 			this.render();
 		}
 		else if ((classList.indexOf('check-icon') !== -1)) {
-			
-			this.toggleCheckedState(node, _default.options);
-			this.render();
+
+            preventDefault = false;
+            if (event.target.tagName == 'INPUT')
+                this.setCheckedState(node, event.target.checked, _default.options);
+			//this.render();
 		}
 		else {
 			
@@ -345,7 +346,10 @@
 			}
 
 			this.render();
-		}
+        }
+
+        if (preventDefault) event.preventDefault();
+        
 	};
 
 	// Looks up the DOM for the closest parent list item to retrieve the
@@ -513,8 +517,12 @@
 
 		var _this = this;
 		$.each(nodes, function addNodes(id, node) {
+            var template = $.extend({}, _this.template);
 
-			var treeItem = $(_this.template.item)
+            if (node.template)
+                template = $.extend(template, node.template);
+
+			var treeItem = $(template.item)
 				.addClass('node-' + _this.elementId)
 				.addClass(node.state.checked ? 'node-checked' : '')
 				.addClass(node.state.disabled ? 'node-disabled': '')
@@ -525,7 +533,7 @@
 
 			// Add indent/spacer to mimic tree structure
 			for (var i = 0; i < (level - 1); i++) {
-				treeItem.append(_this.template.indent);
+				treeItem.append(template.indent);
 			}
 
 			// Add expand, collapse or empty spacer icons
@@ -544,7 +552,7 @@
 			}
 
 			treeItem
-				.append($(_this.template.icon)
+				.append($(template.icon)
 					.addClass(classList.join(' '))
 				);
 
@@ -562,48 +570,45 @@
 				}
 
 				treeItem
-					.append($(_this.template.icon)
+					.append($(template.icon)
 						.addClass(classList.join(' '))
 					);
+			}
+
+            var nodeText = node.text;
+
+			// Add hyperlink
+			if (_this.options.enableLinks && node.href) {
+                nodeText = $(template.link)
+						.attr('href', node.href)
+						.append(node.text);
 			}
 
 			// Add check / unchecked icon
-			if (_this.options.showCheckbox) {
+            if (_this.options.showCheckbox) {
+                var checkbox = $('<input type="checkbox"></input>')
+                    .attr('id', 'chk' + node.nodeId)
+                    .addClass('check-icon');
 
-				var classList = ['check-icon'];
-				if (node.state.checked) {
-					classList.push(_this.options.checkedIcon); 
-				}
-				else {
-					classList.push(_this.options.uncheckedIcon);
-				}
+                if (node.state.checked)
+                    checkbox.attr('checked', 'checked');
 
-				treeItem
-					.append($(_this.template.icon)
-						.addClass(classList.join(' '))
-					);
-			}
-
-			// Add text
-			if (_this.options.enableLinks && node.href) {
-				// Add hyperlink
-				treeItem
-					.append($(_this.template.link)
-						.attr('href', node.href)
-						.append(node.text)
-					);
-			}
-			else {
-				// otherwise just text
-				treeItem
-					.append(node.text);
-			}
+                treeItem
+                    .append(checkbox)
+                    .append($('<label></label>')
+                        .attr('for', 'chk' + node.nodeId)
+                        .addClass('check-icon'))
+                    .append(nodeText);
+            }
+            else {
+                treeItem.append(nodeText);
+            }
 
 			// Add tags as badges
 			if (_this.options.showTags && node.tags) {
 				$.each(node.tags, function addTag(id, tag) {
 					treeItem
-						.append($(_this.template.badge)
+						.append($(template.badge)
 							.append(tag)
 						);
 				});
@@ -695,7 +700,8 @@
 		indent: '<span class="indent"></span>',
 		icon: '<span class="icon"></span>',
 		link: '<a href="#" style="color:inherit;"></a>',
-		badge: '<span class="badge"></span>'
+        badge: '<span class="badge"></span>',
+        checkbox: '<input type="checkbox"></input><label></label>'
 	};
 
 	Tree.prototype.css = '.treeview .list-group-item{cursor:pointer}.treeview span.indent{margin-left:10px;margin-right:10px}.treeview span.icon{width:12px;margin-right:5px}.treeview .node-disabled{color:silver;cursor:not-allowed}'
