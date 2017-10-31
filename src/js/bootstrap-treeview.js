@@ -338,8 +338,14 @@
 		else if ((classList.indexOf('check-icon') !== -1)) {
 
             preventDefault = false;
-            if (event.target.tagName == 'INPUT')
-                this.setCheckedState(node, event.target.checked, _default.options);
+			if (event.target.tagName == 'LABEL') {
+				//handles the label click, not the input click - wider area with materialize
+				var newState = !this.$element.find("#chk" + node.nodeId).prop("checked");
+				this.setCheckedState(node, newState, _default.options);
+				if (node.nodes && node.nodes.length > 0)
+					for (var child of node.nodes)
+						this.setChildNodesCheckedState(child, newState);
+			}
 			//this.render();
 		}
 		else {
@@ -437,6 +443,17 @@
 			}
 		}
 	};
+
+	Tree.prototype.setChildNodesCheckedState = function (node, state) {
+		if (node.nodes && node.nodes.length > 0)
+		{
+			for (var child of node.nodes)
+				this.setChildNodesCheckedState(child, state);
+		}
+		
+		this.$element.find("#chk" + node.nodeId).prop("checked", state);
+		this.setCheckedState(node, state, _default.options);
+	}
 
 	Tree.prototype.toggleCheckedState = function (node, options) {
 		if (!node) return;
