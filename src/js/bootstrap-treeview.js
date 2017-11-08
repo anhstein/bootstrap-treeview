@@ -343,8 +343,8 @@
 				var newState = !this.$element.find("#chk" + node.nodeId).prop("checked");
 				this.setCheckedState(node, newState, _default.options);
 				if (node.nodes && node.nodes.length > 0)
-					for (var child of node.nodes)
-						this.setChildNodesCheckedState(child, newState);
+					for (var i in node.nodes)
+						this.setChildNodesCheckedState(node.nodes[i], newState);
 			}
 			//this.render();
 		}
@@ -447,8 +447,8 @@
 	Tree.prototype.setChildNodesCheckedState = function (node, state) {
 		if (node.nodes && node.nodes.length > 0)
 		{
-			for (var child of node.nodes)
-				this.setChildNodesCheckedState(child, state);
+			for (var i in node.nodes)
+				this.setChildNodesCheckedState(node.nodes[i], state);
 		}
 		
 		this.$element.find("#chk" + node.nodeId).prop("checked", state);
